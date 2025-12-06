@@ -1,52 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RK KNIT FAB • Admin Panel</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap"
+    rel="stylesheet">
+
   <style>
-    body{font-family:Inter,sans-serif;}
-    .glass{background:rgba(255,255,255,0.55);backdrop-filter:blur(14px);}  
-    .fade{animation:fade .5s ease both;} @keyframes fade{from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none}}
-    .preview-img,.preview-video{max-height:220px;border-radius:1rem;object-fit:cover}
-    .table-row:hover{background:rgba(0,0,0,.05)}
+    body {
+      font-family: Inter, sans-serif;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(14px);
+    }
+
+    .fade {
+      animation: fade .5s ease both;
+    }
+
+    @keyframes fade {
+      from {
+        opacity: 0;
+        transform: translateY(8px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .preview-img,
+    .preview-video {
+      max-height: 220px;
+      border-radius: 1rem;
+      object-fit: cover
+    }
+
+    .table-row:hover {
+      background: rgba(0, 0, 0, .05)
+    }
   </style>
 </head>
+
 <body class="bg-gradient-to-br from-slate-200 via-white to-slate-100 p-6 min-h-screen">
+
   <header class="max-w-5xl mx-auto flex items-center justify-between mb-6">
     <h1 class="text-3xl font-extrabold">Admin Panel</h1>
     <a href="index.html" class="text-sm px-4 py-2 rounded-xl border">Back to Catalogue</a>
   </header>
 
+  <!-- COMPANY BOX -->
   <div class="max-w-2xl mx-auto glass rounded-3xl p-6 shadow-xl border border-white/40 fade mb-10">
     <h2 class="text-xl font-bold mb-3">Company Details</h2>
+
     <input id="companyPhone" class="w-full p-3 border rounded-xl mb-2" placeholder="Phone" />
     <input id="companyEmail" class="w-full p-3 border rounded-xl mb-2" placeholder="Email" />
     <textarea id="companyAddress" class="w-full p-3 border rounded-xl mb-4" placeholder="Address"></textarea>
-    <button onclick="saveCompany()" class="w-full bg-blue-600 text-white p-3 rounded-xl mb-8">Save Company Details</button>
+
+    <button onclick="saveCompany()"
+      class="w-full bg-blue-600 text-white p-3 rounded-xl mb-8">Save Company Details</button>
 
     <h2 class="text-xl font-bold mb-3">Add / Update Product</h2>
+
     <input id="pid" type="hidden" />
+
     <input id="name" class="w-full p-3 border rounded-xl mb-2" placeholder="Product Name" />
-    <textarea id="description" class="w-full p-3 border rounded-xl mb-2" placeholder="Description"></textarea>
+
+    <textarea id="description" class="w-full p-3 border rounded-xl mb-2"
+      placeholder="Description"></textarea>
+
     <input id="type" class="w-full p-3 border rounded-xl mb-2" placeholder="Type" />
+
     <input id="price" type="number" class="w-full p-3 border rounded-xl mb-3" placeholder="Price" />
 
     <label class="text-sm font-semibold">Upload Image / Video</label>
-    <input id="fileInput" type="file" accept="image/*,video/*" capture="environment" class="w-full p-3 border rounded-xl mb-3" />
+    <input id="fileInput" type="file" accept="image/*,video/*" capture="environment"
+      class="w-full p-3 border rounded-xl mb-3" />
 
     <div id="previewBox" class="hidden mb-3"></div>
 
     <button onclick="saveProduct()" class="w-full bg-black text-white p-3 rounded-xl">Save Product</button>
   </div>
-
+  <!-- PRODUCTS LIST -->
   <div class="max-w-5xl mx-auto glass rounded-3xl p-6 shadow-xl border border-white/40 fade">
     <div class="flex items-center justify-between mb-3">
       <h2 class="text-xl font-bold">All Products</h2>
       <button onclick="loadProducts()" class="px-3 py-2 rounded-xl border">Refresh</button>
     </div>
+
     <div class="overflow-x-auto">
       <table class="w-full text-left text-sm">
         <thead>
@@ -59,111 +107,184 @@
             <th>Actions</th>
           </tr>
         </thead>
+
         <tbody id="plist"></tbody>
       </table>
     </div>
   </div>
 
-<script>
-const API = "https://companycatalogue-12.rkknitfabsachin.workers.dev/";
+  <!-- JS START -->
+  <script>
 
-// LOAD ALL ITEMS (including inactive)
-async function loadProducts(){
-  const res = await fetch(API + "?all=1");
-  const j = await res.json();
-  if(!j.ok) return alert(j.error||"Error loading products");
-  const list = j.products || [];
-  const box = document.getElementById('plist');
-  box.innerHTML = list.map(p => `
-    <tr class='table-row'>
-      <td class='py-2'>${p.id}</td>
-      <td>${escapeHtml(p.name||'')}</td>
-      <td>${escapeHtml(p.type||'')}</td>
-      <td>₹ ${escapeHtml(p.price||'')}</td>
-      <td>${p.active ? 'Active' : 'Inactive'}</td>
-      <td class='flex gap-2'>
-        <button onclick='editItem(${p.id})' class='px-2 py-1 bg-blue-500 text-white rounded text-xs'>Edit</button>
-        <button onclick='toggleItem(${p.id},${!p.active})' class='px-2 py-1 bg-yellow-500 text-white rounded text-xs'>${p.active ? 'Disable' : 'Enable'}</button>
-        <button onclick='deleteItem(${p.id})' class='px-2 py-1 bg-red-600 text-white rounded text-xs'>Delete</button>
-      </td>
-    </tr>`).join('');
-}
+    const API = "https://companycatalogue-12.rkknitfabsachin.workers.dev/";
 
-async function editItem(id){
-  const res = await fetch(API + "?all=1");
-  const j = await res.json();
-  const p = (j.products||[]).find(x => x.id == id);
-  if(!p) return;
-  pid.value = p.id;
-  name.value = p.name || '';
-  description.value = p.description || '';
-  type.value = p.type || '';
-  price.value = p.price || '';
-  previewBox.innerHTML = `<img src='${p.mediaUrl}' class='preview-img w-full'>`;
-  previewBox.classList.remove('hidden');
-  window.scrollTo({ top:0, behavior:'smooth' });
-}
+    // Load all products including inactive
+    async function loadProducts() {
+      const res = await fetch(API + "?all=1");
+      const j = await res.json();
 
-fileInput.onchange = ()=>{
-  const f = fileInput.files[0];
-  if(!f){ previewBox.classList.add('hidden'); return; }
-  const url = URL.createObjectURL(f);
-  previewBox.classList.remove('hidden');
-  previewBox.innerHTML = f.type.startsWith('video') 
-    ? `<video src='${url}' class='preview-video w-full' controls></video>`
-    : `<img src='${url}' class='preview-img w-full'>`;
-};
+      if (!j.ok) return alert(j.error || "Error loading products");
 
-function toBase64(f){
-  return new Promise(r=>{ const fr=new FileReader(); fr.onload=e=>r(e.target.result); fr.readAsDataURL(f); });
-}
+      const list = j.products || [];
+      const box = document.getElementById("plist");
 
-async function saveProduct(){
-  let action = pid.value ? 'update' : 'create';
-  let media = ""; const f = fileInput.files[0]; if(f) media = await toBase64(f);
-  const data = new URLSearchParams({
-    action,
-    id: pid.value,
-    name: name.value,
-    description: description.value,
-    type: type.value,
-    price: price.value,
-    mediaUrl: media || undefined
-  });
-  const res = await fetch(API, { method:'POST', body:data });
-  const j = await res.json();
-  alert(j.ok ? "Saved!" : j.error || "Error");
-  pid.value = ""; name.value = description.value = type.value = price.value = ""; fileInput.value = ""; previewBox.classList.add('hidden');
-  loadProducts();
-}
+      box.innerHTML = list
+        .map(
+          (p) => `
+        <tr class="table-row">
+          <td class="py-2">${p.id}</td>
+          <td>${escapeHtml(p.name || "")}</td>
+          <td>${escapeHtml(p.type || "")}</td>
+          <td>₹ ${escapeHtml(p.price || "")}</td>
+          <td>${p.active ? "Active" : "Inactive"}</td>
 
-async function deleteItem(id){
-  if(!confirm("Delete this item?")) return;
-  const data = new URLSearchParams({ action:'delete', id });
-  const r = await fetch(API, { method:'POST', body:data });
-  const j = await r.json();
-  alert(j.ok ? "Deleted!" : j.error || "Error");
-  loadProducts();
-}
+          <td class="flex gap-2 py-2">
+            <button onclick="editItem(${p.id})"
+              class="px-2 py-1 bg-blue-500 text-white rounded text-xs">Edit</button>
 
-async function toggleItem(id, active){
-  const data = new URLSearchParams({ action:'toggle', id, active });
-  const r = await fetch(API, { method:'POST', body:data });
-  const j = await r.json();
-  if(!j.ok) alert(j.error||"Error");
-  loadProducts();
-}
+            <button onclick="toggleItem(${p.id}, ${!p.active})"
+              class="px-2 py-1 bg-yellow-500 text-white rounded text-xs">
+              ${p.active ? "Disable" : "Enable"}
+            </button>
 
-async function saveCompany(){
-  const data = new URLSearchParams({ updateCompany:'1', phone:companyPhone.value, email:companyEmail.value, address:companyAddress.value });
-  const r = await fetch(API, { method:'POST', body:data });
-  const j = await r.json();
-  alert(j.ok ? 'Company details saved' : (j.error||'Error'));
-}
+            <button onclick="deleteItem(${p.id})"
+              class="px-2 py-1 bg-red-600 text-white rounded text-xs">Delete</button>
+          </td>
+        </tr>
+      `
+        )
+        .join("");
+    }
+    // Load item into the form for editing
+    async function editItem(id) {
+      const res = await fetch(API + "?all=1");
+      const j = await res.json();
 
-function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+      const p = (j.products || []).find((x) => x.id == id);
+      if (!p) return;
 
-loadProducts();
-</script>
+      pid.value = p.id;
+      name.value = p.name || "";
+      description.value = p.description || "";
+      type.value = p.type || "";
+      price.value = p.price || "";
+
+      previewBox.innerHTML = `<img src="${p.mediaUrl}" class="preview-img w-full" />`;
+      previewBox.classList.remove("hidden");
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // LIVE PREVIEW
+    fileInput.onchange = () => {
+      const f = fileInput.files[0];
+      if (!f) {
+        previewBox.classList.add("hidden");
+        return;
+      }
+
+      const url = URL.createObjectURL(f);
+      previewBox.classList.remove("hidden");
+
+      previewBox.innerHTML = f.type.startsWith("video")
+        ? `<video src="${url}" class="preview-video w-full" controls></video>`
+        : `<img src="${url}" class="preview-img w-full" />`;
+    };
+
+    // Convert file → Base64
+    function toBase64(f) {
+      return new Promise((resolve) => {
+        const fr = new FileReader();
+        fr.onload = (e) => resolve(e.target.result);
+        fr.readAsDataURL(f);
+      });
+    }
+
+    // CREATE OR UPDATE PRODUCT
+    async function saveProduct() {
+      let action = pid.value ? "update" : "create";
+
+      let media = "";
+      const f = fileInput.files[0];
+      if (f) media = await toBase64(f);
+
+      const data = new URLSearchParams({
+        action,
+        id: pid.value,
+        name: name.value,
+        description: description.value,
+        type: type.value,
+        price: price.value,
+        mediaUrl: media || ""
+      });
+
+      const res = await fetch(API, { method: "POST", body: data });
+      const j = await res.json();
+
+      alert(j.ok ? "Saved!" : j.error || "Error");
+
+      // Clear form
+      pid.value = "";
+      name.value = "";
+      description.value = "";
+      type.value = "";
+      price.value = "";
+      fileInput.value = "";
+      previewBox.classList.add("hidden");
+
+      loadProducts();
+    }
+
+    // DELETE PRODUCT
+    async function deleteItem(id) {
+      if (!confirm("Delete this item?")) return;
+
+      const data = new URLSearchParams({ action: "delete", id });
+      const res = await fetch(API, { method: "POST", body: data });
+      const j = await res.json();
+
+      alert(j.ok ? "Deleted!" : j.error || "Error");
+
+      loadProducts();
+    }
+
+    // ENABLE / DISABLE PRODUCT
+    async function toggleItem(id, active) {
+      const data = new URLSearchParams({ action: "toggle", id, active });
+      const res = await fetch(API, { method: "POST", body: data });
+      const j = await res.json();
+
+      if (!j.ok) alert(j.error || "Error");
+
+      loadProducts();
+    }
+
+    // SAVE COMPANY DETAILS
+    async function saveCompany() {
+      const data = new URLSearchParams({
+        updateCompany: "1",
+        phone: companyPhone.value,
+        email: companyEmail.value,
+        address: companyAddress.value
+      });
+
+      const res = await fetch(API, { method: "POST", body: data });
+      const j = await res.json();
+
+      alert(j.ok ? "Company details saved" : j.error || "Error");
+    }
+
+    // Escape HTML
+    function escapeHtml(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;");
+    }
+
+    loadProducts();
+  </script>
+
 </body>
 </html>
