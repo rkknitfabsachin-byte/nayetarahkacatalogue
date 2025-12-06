@@ -30,7 +30,10 @@
           <p id="companyEmail" class="text-xs text-slate-600"></p>
         </div>
       </div>
-      <div id="companyPhone" class="text-sm md:text-base font-semibold"></div>
+      <div class="flex items-center gap-2">
+        <a href="enquiry.html" class="hidden md:inline-block px-4 py-2 rounded-xl border border-slate-300">Enquiry</a>
+        <span id="companyPhone" class="text-sm md:text-base font-semibold"></span>
+      </div>
     </div>
   </header>
 
@@ -57,7 +60,7 @@
             <option value="name">Name A → Z</option>
           </select>
         </div>
-        <a href="enquiry.html" class="px-4 py-2 rounded-xl border border-slate-300 text-center">Enquiry</a>
+        <a href="enquiry.html" class="md:hidden px-4 py-2 rounded-xl border border-slate-300 text-center">Enquiry</a>
       </div>
     </div>
   </section>
@@ -94,7 +97,7 @@
   <footer class="text-center text-xs text-slate-500 pb-8">© <span id="yr"></span> RK KNIT FAB — All rights reserved.</footer>
 
 <script>
-  const API = "https://script.google.com/macros/s/AKfycbywqAS_hZ4ht89pxUgZFb34vWIeufTp58jeO_-YmgAQGlUoUaB3Qzv4ixJYtXaiEoX3/exec";
+  const API = "https://companycatalogue-12.rkknitfabsachin.workers.dev/";
 
   async function init(){
     document.getElementById('yr').textContent = new Date().getFullYear();
@@ -104,26 +107,31 @@
   }
 
   async function loadCompany(){
-    const r = await fetch(API + '?company=1');
-    const j = await r.json();
-    if(j.ok){
-      companyPhone.textContent = j.phone || '';
-      companyEmail.textContent = j.email || '';
-    }
+    try{
+      const r = await fetch(API + '?company=1');
+      const j = await r.json();
+      if(j.ok){
+        companyPhone.textContent = j.phone || '';
+        companyEmail.textContent = j.email || '';
+      }
+    }catch(err){ /* ignore */ }
   }
 
   let ALL = [];
 
   async function loadProducts(){
-    const r = await fetch(API);
-    const j = await r.json();
-    ALL = j.products || [];
-    buildTypeOptions();
-    render();
+    try{
+      const r = await fetch(API);
+      const j = await r.json();
+      ALL = j.products || [];
+      buildTypeOptions();
+      render();
+    }catch(err){ ALL = []; render(); }
   }
 
   function buildTypeOptions(){
     const sel = document.getElementById('typeFilter');
+    sel.innerHTML = '<option value="">All</option>';
     const set = Array.from(new Set((ALL||[]).map(p => p.type).filter(Boolean))).sort();
     for(const t of set){ const o = document.createElement('option'); o.value=t; o.textContent=t; sel.appendChild(o); }
   }
@@ -159,9 +167,9 @@
   function card(p){
     const media = isVideo(p.mediaUrl)
       ? `<video class='w-full h-56 object-cover rounded-2xl' src='${p.mediaUrl}' controls muted playsinline></video>`
-      : `<img class='w-full h-56 object-cover rounded-2xl' src='${p.mediaUrl}' alt='${escapeHtml(p.name||"")}'>`;
+      : `<img class='w-full h-56 object-cover rounded-2xl' src='${p.mediaUrl}' alt='${escapeHtml(p.name||"")}'/>`;
     return `
-      <article class='glass card rounded-3xl p-3 border border-white/50 fade' onclick='openModal(${JSON.stringify(p).split("'").join("&apos;")})'>
+      <article class='glass card rounded-3xl p-3 border border-white/50 fade' onclick='openModal(${JSON.stringify(p).split("'\").join("&apos;")})'>
         <div class='rounded-2xl overflow-hidden'>${media}</div>
         <div class='p-3'>
           <h3 class='text-lg font-bold clamp-2'>${p.name||''}</h3>
@@ -179,7 +187,7 @@
     mPrice.textContent = "₹ " + (p.price||'');
     modalMedia.innerHTML = isVideo(p.mediaUrl)
       ? `<video class='w-full h-full object-cover' src='${p.mediaUrl}' controls autoplay muted playsinline></video>`
-      : `<img class='w-full h-full object-cover' src='${p.mediaUrl}' alt='${escapeHtml(p.name||"")}'>`;
+      : `<img class='w-full h-full object-cover' src='${p.mediaUrl}' alt='${escapeHtml(p.name||"")}'/>`;
     modal.classList.remove('hidden');
     document.body.classList.add('no-scroll');
   }
