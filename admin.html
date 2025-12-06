@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Catalogue Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-100 p-6">
+
+<h1 class="text-2xl font-bold mb-4">Catalogue Admin</h1>
+
+<div class="bg-white p-5 rounded-xl shadow max-w-xl">
+
+  <!-- ADMIN KEY -->
+  <div class="mb-4">
+    <label class="font-semibold">Admin Key</label>
+    <input id="adminKey" type="password" class="w-full p-2 border rounded mt-1" placeholder="Enter admin key">
+  </div>
+
+  <!-- PRODUCT FORM -->
+  <div class="grid gap-3">
+
+    <input id="name" class="p-2 border rounded" placeholder="Product Name">
+
+    <textarea id="description" class="p-2 border rounded" placeholder="Description"></textarea>
+
+    <input id="type" class="p-2 border rounded" placeholder="Type (e.g. T-Shirt, Fabric)">
+
+    <input id="price" type="number" class="p-2 border rounded" placeholder="Price">
+
+    <input id="mediaUrl" class="p-2 border rounded" placeholder="Google Drive Image/Video Link">
+
+    <button onclick="upload()" class="p-3 bg-black text-white rounded-xl">Add Product</button>
+  </div>
+</div>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycbywqAS_hZ4ht89pxUgZFb34vWIeufTp58jeO_-YmgAQGlUoUaB3Qzv4ixJYtXaiEoX3/exec"; // example: https://script.google.com/macros/s/AKfycbxxxx/exec
+
+function driveToDirect(url){
+  // converts drive link to direct-view link
+  try {
+    const id = url.match(/[-\w]{25,}/)[0];
+    return "https://drive.google.com/uc?export=view&id=" + id;
+  } catch {
+    return url;
+  }
+}
+
+async function upload() {
+
+  const key = document.getElementById("adminKey").value.trim();
+  if (!key) return alert("Admin key required.");
+
+  const data = {
+    name: name.value,
+    description: description.value,
+    type: type.value,
+    price: price.value,
+    mediaUrl: driveToDirect(mediaUrl.value),
+    adminKey: key
+  };
+
+  const form = new URLSearchParams(data);
+
+  const res = await fetch(API, { method: "POST", body: form });
+  const json = await res.json();
+
+  if (json.ok) {
+    alert("Product added!");
+    name.value = description.value = type.value = price.value = mediaUrl.value = "";
+  } else {
+    alert("Error: " + json.error);
+  }
+}
+</script>
+
+</body>
+</html>
