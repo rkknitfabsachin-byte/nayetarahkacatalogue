@@ -25,10 +25,11 @@
     <!-- Company Details -->
     <h2 class="text-xl font-bold mb-3">Company Details</h2>
     <input id="companyPhone" class="w-full p-3 border rounded-xl mb-2" placeholder="Phone" />
-    <input id="companyEmail" class="w-full p-3 border rounded-xl mb-4" placeholder="Email" />
+    <input id="companyEmail" class="w-full p-3 border rounded-xl mb-2" placeholder="Email" />
+    <textarea id="companyAddress" class="w-full p-3 border rounded-xl mb-4" placeholder="Address"></textarea>
     <button onclick="saveCompany()" class="w-full bg-blue-600 text-white p-3 rounded-xl mb-8">Save Company Details</button>
 
-    <!-- Add Product -->
+    <!-- Add/Update Product -->
     <h2 class="text-xl font-bold mb-3">Add / Update Product</h2>
 
     <input id="pid" type="hidden" />
@@ -69,20 +70,20 @@
 <script>
 const API = "https://script.google.com/macros/s/AKfycbywqAS_hZ4ht89pxUgZFb34vWIeufTp58jeO_-YmgAQGlUoUaB3Qzv4ixJYtXaiEoX3/exec";
 
-// LOAD ALL ITEMS
+// LOAD ALL ITEMS (including inactive)
 async function loadProducts(){
-  const res = await fetch(API);
+  const res = await fetch(API + "?all=1");
   const j = await res.json();
   if(!j.ok) return;
-  const list = j.products;
+  const list = j.products || [];
 
   const box = document.getElementById('plist');
   box.innerHTML = list.map(p => `
     <tr class='table-row'>
       <td class='py-2'>${p.id}</td>
-      <td>${p.name}</td>
-      <td>${p.type}</td>
-      <td>₹ ${p.price}</td>
+      <td>${escapeHtml(p.name||'')}</td>
+      <td>${escapeHtml(p.type||'')}</td>
+      <td>₹ ${escapeHtml(p.price||'')}</td>
       <td>${p.active ? 'Active' : 'Inactive'}</td>
       <td class='flex gap-2'>
         <button onclick='editItem(${p.id})' class='px-2 py-1 bg-blue-500 text-white rounded text-xs'>Edit</button>
@@ -95,16 +96,16 @@ async function loadProducts(){
 
 // EDIT FLOW
 async function editItem(id){
-  const res = await fetch(API);
+  const res = await fetch(API + "?all=1");
   const j = await res.json();
-  const p = j.products.find(x => x.id == id);
+  const p = (j.products||[]).find(x => x.id == id);
   if(!p) return;
 
   pid.value = p.id;
-  name.value = p.name;
-  description.value = p.description;
-  type.value = p.type;
-  price.value = p.price;
+  name.value = p.name || '';
+  description.value = p.description || '';
+  type.value = p.type || '';
+  price.value = p.price || '';
 
   document.getElementById('previewBox').innerHTML = `<img src='${p.mediaUrl}' class='preview-img w-full'>`;
   document.getElementById('previewBox').classList.remove('hidden');
@@ -149,12 +150,14 @@ async function saveProduct(){
 
   const res = await fetch(API, { method:'POST', body:data });
   const j = await res.json();
-  alert(j.ok ? "Saved!" : j.error);
+  alert(j.ok ? "Saved!" : j.error || "Error");
 
+  // reset
   pid.value = "";
   name.value = description.value = type.value = price.value = "";
   fileInput.value = "";
   previewBox.classList.add('hidden');
+
   loadProducts();
 }
 
@@ -164,7 +167,7 @@ async function deleteItem(id){
   const data = new URLSearchParams({ action:'delete', id });
   const r = await fetch(API, { method:'POST', body:data });
   const j = await r.json();
-  alert(j.ok ? "Deleted!" : j.error);
+  alert(j.ok ? "Deleted!" : j.error || "Error");
   loadProducts();
 }
 
@@ -173,15 +176,25 @@ async function toggleItem(id, active){
   const data = new URLSearchParams({ action:'toggle', id, active });
   const r = await fetch(API, { method:'POST', body:data });
   const j = await r.json();
+  if(!j.ok) alert(j.error||"Error");
   loadProducts();
 }
 
 // COMPANY
 async function saveCompany(){
-  const data = new URLSearchParams({ updateCompany:'1', phone:companyPhone.value, email:companyEmail.value });
+  const data = new URLSearchParams({ 
+    updateCompany:'1', 
+    phone:companyPhone.value, 
+    email:companyEmail.value,
+    address:companyAddress.value
+  });
   const r = await fetch(API, { method:'POST', body:data });
   const j = await r.json();
-  alert(j.ok ? 'Company details saved' : j.error);
+  alert(j.ok ? 'Company details saved' : (j.error||'Error'));
+}
+
+function escapeHtml(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 loadProducts();
