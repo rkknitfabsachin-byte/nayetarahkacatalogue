@@ -38,15 +38,19 @@
   </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbywqAS_hZ4ht89pxUgZFb34vWIeufTp58jeO_-YmgAQGlUoUaB3Qzv4ixJYtXaiEoX3/exec";
+const API = "https://companycatalogue-12.rkknitfabsachin.workers.dev/";
 
 async function load(){
-  const res = await fetch(API + '?company=1');
-  const j = await res.json();
-  if(j.ok){
-    phone.textContent = j.phone || 'Not provided';
-    email.textContent = j.email || 'Not provided';
-    address.textContent = j.address || 'Not provided';
+  try{
+    const res = await fetch(API + '?company=1');
+    const j = await res.json();
+    if(j.ok){
+      phone.textContent = j.phone || 'Not provided';
+      email.textContent = j.email || 'Not provided';
+      address.textContent = j.address || 'Not provided';
+    }
+  }catch(err){
+    phone.textContent = email.textContent = address.textContent = '—';
   }
 }
 load();
